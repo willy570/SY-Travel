@@ -30,37 +30,89 @@ class MainPage extends StatefulWidget {
   State<MainPage> createState() => _MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageState extends State<MainPage>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
+  late AnimationController _animationController;
+  double get maxHeight => 400.0 + 20 + 32;
+  @override
+  void initState() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(microseconds: 1000),
+    );
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => PageOffsetNotifier(_pageController),
-      child: Scaffold(
-        body: SafeArea(
-          child: Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              PageView(
-                controller: _pageController,
-                physics: const ClampingScrollPhysics(),
-                children: const [
-                  LeopardPage(),
-                  VulturePage(),
+      child: ListenableProvider.value(
+        value: _animationController,
+        child: Scaffold(
+          body: SafeArea(
+            child: GestureDetector(
+              onVerticalDragUpdate: _handleDragUpdate,
+              onVerticalDragEnd: _handleDragEnd,
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  PageView(
+                    controller: _pageController,
+                    physics: const ClampingScrollPhysics(),
+                    children: const [
+                      LeopardPage(),
+                      VulturePage(),
+                    ],
+                  ),
+                  const AppBar(),
+                  const LeopardImage(),
+                  const VultureImage(),
+                  const ShareButton(),
+                  const PageIndicator(),
+                  const ArrowIcon(),
+                  const TravelDetailsLabel(),
+                  const StartCampLabel(),
+                  const StartTimeLabel(),
+                  const BaseCampLabel(),
+                  const BaseTimeLabel(),
+                  const DistanceLabel(),
+                  const TravelDots(),
+                  const MapButton(),
                 ],
               ),
-              const AppBar(),
-              const LeopardImage(),
-              const VultureImage(),
-              const ShareButton(),
-              const PageIndicator(),
-              const ArrowIcon(),
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    _animationController.value -= (details.primaryDelta! / maxHeight);
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (_animationController.isAnimating ||
+        _animationController.status == AnimationStatus.completed) return;
+
+    final double flingVelocity =
+        details.velocity.pixelsPerSecond.dy / maxHeight;
+    if (flingVelocity < 0.0) {
+      _animationController.fling(velocity: math.max(2.0, -flingVelocity));
+    } else if (flingVelocity > 0.0) {
+      _animationController.fling(velocity: math.min(-2.0, -flingVelocity));
+    } else {
+      _animationController.fling(
+          velocity: _animationController.value < 0.5 ? -2.0 : 2.0);
+    }
   }
 }
 
@@ -119,6 +171,36 @@ class AppBar extends StatelessWidget {
   }
 }
 
+class TravelDetailsLabel extends StatelessWidget {
+  const TravelDetailsLabel({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<PageOffsetNotifier, AnimationController>(
+      builder: (context, notifier, animation, child) {
+        return Positioned(
+          top: 120.0 + (1 - animation.value) * (32 + 400),
+          left: 24 + MediaQuery.of(context).size.width - notifier.offset,
+          child: Opacity(
+            opacity: math.max(
+              0,
+              4 * notifier.page - 3,
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: const Padding(
+        padding: EdgeInsets.only(left: 24.0),
+        child: Text(
+          "Travel details",
+          style: TextStyle(fontSize: 18.0),
+        ),
+      ),
+    );
+  }
+}
+
 class ShareButton extends StatelessWidget {
   const ShareButton({Key? key}) : super(key: key);
 
@@ -137,10 +219,15 @@ class ArrowIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Positioned(
-      top: 120.0 + 32 + 400,
-      right: 24,
-      child: Icon(
+    return Consumer<AnimationController>(
+      builder: (context, animation, child) {
+        return Positioned(
+          top: 120.0 + (1 - animation.value) * (32 + 400 - 4),
+          right: 24,
+          child: child!,
+        );
+      },
+      child: const Icon(
         Icons.keyboard_arrow_up,
         size: 28,
         color: lighterGrey,
@@ -196,6 +283,307 @@ class VulturePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container();
+    return const Center(child: VultureCircle());
+  }
+}
+
+class StartCampLabel extends StatelessWidget {
+  const StartCampLabel({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PageOffsetNotifier>(
+      builder: (context, notifier, child) {
+        double opacity = math.max(
+          0,
+          4 * notifier.page - 3,
+        );
+        return Positioned(
+          top: 120.0 + 400 + 32 + 16 + 32,
+          width: (MediaQuery.of(context).size.width - 48) / 3,
+          left: opacity * 24.0,
+          child: Opacity(
+            opacity: opacity,
+            child: child,
+          ),
+        );
+      },
+      child: const Align(
+        alignment: Alignment.centerRight,
+        child: Text(
+          "Start camp",
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class StartTimeLabel extends StatelessWidget {
+  const StartTimeLabel({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PageOffsetNotifier>(
+      builder: (context, notifier, child) {
+        double opacity = math.max(
+          0,
+          4 * notifier.page - 3,
+        );
+        return Positioned(
+          top: 120.0 + 400 + 32 + 16 + 32 + 40,
+          width: (MediaQuery.of(context).size.width - 48) / 3,
+          left: opacity * 24.0,
+          child: Opacity(
+            opacity: opacity,
+            child: child,
+          ),
+        );
+      },
+      child: const Align(
+        alignment: Alignment.centerRight,
+        child: Text(
+          "02:40 pm",
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w300,
+            color: lighterGrey,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BaseCampLabel extends StatelessWidget {
+  const BaseCampLabel({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<PageOffsetNotifier, AnimationController>(
+      builder: (context, notifier, animation, child) {
+        double opacity = math.max(
+          0,
+          4 * notifier.page - 3,
+        );
+        return Positioned(
+          top: 120.0 + 400 + 32 + 16 + 32,
+          width: (MediaQuery.of(context).size.width - 48) / 3,
+          right: opacity * 24.0,
+          child: Opacity(
+            opacity: opacity,
+            child: child,
+          ),
+        );
+      },
+      child: const Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          "Base camp",
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BaseTimeLabel extends StatelessWidget {
+  const BaseTimeLabel({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PageOffsetNotifier>(
+      builder: (context, notifier, child) {
+        double opacity = math.max(
+          0,
+          4 * notifier.page - 3,
+        );
+        return Positioned(
+          top: 120.0 + 400 + 32 + 16 + 32 + 40,
+          width: (MediaQuery.of(context).size.width - 48) / 3,
+          right: opacity * 24.0,
+          child: Opacity(
+            opacity: opacity,
+            child: child,
+          ),
+        );
+      },
+      child: const Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          "07:30 am",
+          style: TextStyle(
+            fontSize: 14.0,
+            fontWeight: FontWeight.w300,
+            color: lighterGrey,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DistanceLabel extends StatelessWidget {
+  const DistanceLabel({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PageOffsetNotifier>(
+      builder: (context, notifier, child) {
+        double opacity = math.max(
+          0,
+          4 * notifier.page - 3,
+        );
+        return Positioned(
+          top: 120.0 + 400 + 32 + 16 + 32 + 40,
+          width: MediaQuery.of(context).size.width,
+          child: Opacity(
+            opacity: opacity,
+            child: child,
+          ),
+        );
+      },
+      child: const Center(
+        child: Text(
+          "72 km",
+          style: TextStyle(
+            fontSize: 18.0,
+            fontWeight: FontWeight.bold,
+            color: white,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TravelDots extends StatelessWidget {
+  const TravelDots({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PageOffsetNotifier>(builder: (context, notifier, child) {
+      double opacity = math.max(
+        0,
+        4 * notifier.page - 3,
+      );
+      return Positioned(
+        top: 120.0 + 400 + 32 + 16 + 32 + 4,
+        left: 0,
+        right: 0,
+        child: Center(
+          child: Opacity(
+            opacity: opacity,
+            child: Stack(alignment: Alignment.center, children: [
+              Container(
+                margin: EdgeInsets.only(left: opacity * 40),
+                decoration: const BoxDecoration(
+                  color: white,
+                  shape: BoxShape.circle,
+                ),
+                height: 8,
+                width: 8,
+              ),
+              Container(
+                margin: EdgeInsets.only(left: opacity * 10),
+                decoration: const BoxDecoration(
+                  color: lightGrey,
+                  shape: BoxShape.circle,
+                ),
+                height: 4,
+                width: 4,
+              ),
+              Container(
+                margin: EdgeInsets.only(right: opacity * 10),
+                decoration: const BoxDecoration(
+                  color: lightGrey,
+                  shape: BoxShape.circle,
+                ),
+                height: 4,
+                width: 4,
+              ),
+              Container(
+                margin: EdgeInsets.only(right: opacity * 40),
+                decoration: BoxDecoration(
+                  border: Border.all(color: white),
+                  shape: BoxShape.circle,
+                ),
+                height: 8,
+                width: 8,
+              ),
+            ]),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+class MapButton extends StatelessWidget {
+  const MapButton({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 8,
+      bottom: 0,
+      child: Consumer<PageOffsetNotifier>(
+        builder: (context, notifier, child) {
+          double opacity = math.max(
+            0,
+            4 * notifier.page - 3,
+          );
+          return Opacity(
+            opacity: opacity,
+            child: child!,
+          );
+        },
+        child: TextButton(
+          child: const Text(
+            'ON MAP',
+            style: TextStyle(
+              color: white,
+              fontSize: 12,
+            ),
+          ),
+          onPressed: () async {
+            await Provider.of<AnimationController>(context, listen: false)
+                .forward();
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class VultureCircle extends StatelessWidget {
+  const VultureCircle({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<PageOffsetNotifier>(builder: (context, notifier, child) {
+      double multiplier = math.max(
+        0,
+        4 * notifier.page - 3,
+      );
+      double size = MediaQuery.of(context).size.width * 0.5 * multiplier;
+      return Container(
+        margin: const EdgeInsets.only(
+          bottom: 250.0,
+        ),
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: lightGrey,
+        ),
+        width: size,
+        height: size,
+      );
+    });
   }
 }
