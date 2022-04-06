@@ -62,7 +62,7 @@ class _MainPageState extends State<MainPage>
               onVerticalDragUpdate: _handleDragUpdate,
               onVerticalDragEnd: _handleDragEnd,
               child: Stack(
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 children: [
                   PageView(
                     controller: _pageController,
@@ -84,8 +84,9 @@ class _MainPageState extends State<MainPage>
                   const BaseCampLabel(),
                   const BaseTimeLabel(),
                   const DistanceLabel(),
-                  const TravelDots(),
+                  const HorizontalTravelDots(),
                   const MapButton(),
+                  const VerticalTravelDots(),
                 ],
               ),
             ),
@@ -121,12 +122,18 @@ class VultureImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PageOffsetNotifier>(
-      builder: (context, notifier, child) {
+    return Consumer2<PageOffsetNotifier, AnimationController>(
+      builder: (context, notifier, animation, child) {
         return Positioned(
           left:
               1.25 * MediaQuery.of(context).size.width - 0.85 * notifier.offset,
-          child: child!,
+          child: Transform.scale(
+            scale: 1 - 0.1 * animation.value,
+            child: Opacity(
+              opacity: 1 - 0.6 * animation.value,
+              child: child!,
+            ),
+          ),
         );
       },
       child: IgnorePointer(
@@ -370,7 +377,7 @@ class BaseCampLabel extends StatelessWidget {
           4 * notifier.page - 3,
         );
         return Positioned(
-          top: 120.0 + 400 + 32 + 16 + 32,
+          top: 120.0 + 32 + 16 + 4 + (1 - animation.value) * (400 + 32 + -4),
           width: (MediaQuery.of(context).size.width - 48) / 3,
           right: opacity * 24.0,
           child: Opacity(
@@ -398,14 +405,19 @@ class BaseTimeLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PageOffsetNotifier>(
-      builder: (context, notifier, child) {
+    return Consumer2<PageOffsetNotifier, AnimationController>(
+      builder: (
+        context,
+        notifier,
+        animation,
+        child,
+      ) {
         double opacity = math.max(
           0,
           4 * notifier.page - 3,
         );
         return Positioned(
-          top: 120.0 + 400 + 32 + 16 + 32 + 40,
+          top: 120.0 + 32 + 16 + 44 + (1 - animation.value) * (400 + 32 - 4),
           width: (MediaQuery.of(context).size.width - 48) / 3,
           right: opacity * 24.0,
           child: Opacity(
@@ -463,16 +475,23 @@ class DistanceLabel extends StatelessWidget {
   }
 }
 
-class TravelDots extends StatelessWidget {
-  const TravelDots({Key? key}) : super(key: key);
+class HorizontalTravelDots extends StatelessWidget {
+  const HorizontalTravelDots({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PageOffsetNotifier>(builder: (context, notifier, child) {
-      double opacity = math.max(
-        0,
-        4 * notifier.page - 3,
-      );
+    return Consumer2<PageOffsetNotifier, AnimationController>(
+        builder: (context, notifier, animation, child) {
+      double spacingFactor;
+      double opacity;
+      if (animation.value == 0) {
+        spacingFactor = math.max(0, 4 * notifier.page - 3);
+        opacity = spacingFactor;
+      } else {
+        spacingFactor = math.max(0, 1 - 6 * animation.value);
+        opacity = 1;
+      }
+
       return Positioned(
         top: 120.0 + 400 + 32 + 16 + 32 + 4,
         left: 0,
@@ -482,36 +501,36 @@ class TravelDots extends StatelessWidget {
             opacity: opacity,
             child: Stack(alignment: Alignment.center, children: [
               Container(
-                margin: EdgeInsets.only(left: opacity * 40),
+                margin: EdgeInsets.only(left: spacingFactor * 10),
                 decoration: const BoxDecoration(
-                  color: white,
+                  color: lightGrey,
+                  shape: BoxShape.circle,
+                ),
+                height: 4,
+                width: 4,
+              ),
+              Container(
+                margin: EdgeInsets.only(right: spacingFactor * 10),
+                decoration: const BoxDecoration(
+                  color: lightGrey,
+                  shape: BoxShape.circle,
+                ),
+                height: 4,
+                width: 4,
+              ),
+              Container(
+                margin: EdgeInsets.only(right: spacingFactor * 40),
+                decoration: BoxDecoration(
+                  border: Border.all(color: white),
                   shape: BoxShape.circle,
                 ),
                 height: 8,
                 width: 8,
               ),
               Container(
-                margin: EdgeInsets.only(left: opacity * 10),
+                margin: EdgeInsets.only(left: spacingFactor * 40),
                 decoration: const BoxDecoration(
-                  color: lightGrey,
-                  shape: BoxShape.circle,
-                ),
-                height: 4,
-                width: 4,
-              ),
-              Container(
-                margin: EdgeInsets.only(right: opacity * 10),
-                decoration: const BoxDecoration(
-                  color: lightGrey,
-                  shape: BoxShape.circle,
-                ),
-                height: 4,
-                width: 4,
-              ),
-              Container(
-                margin: EdgeInsets.only(right: opacity * 40),
-                decoration: BoxDecoration(
-                  border: Border.all(color: white),
+                  color: white,
                   shape: BoxShape.circle,
                 ),
                 height: 8,
@@ -567,11 +586,18 @@ class VultureCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<PageOffsetNotifier>(builder: (context, notifier, child) {
-      double multiplier = math.max(
-        0,
-        4 * notifier.page - 3,
-      );
+    return Consumer2<PageOffsetNotifier, AnimationController>(builder: (
+      context,
+      notifier,
+      animation,
+      child,
+    ) {
+      double multiplier;
+      if (animation.value == 0) {
+        multiplier = math.max(0, 4 * notifier.page - 3);
+      } else {
+        multiplier = math.max(0, 1 - 4 * animation.value);
+      }
       double size = MediaQuery.of(context).size.width * 0.5 * multiplier;
       return Container(
         margin: const EdgeInsets.only(
@@ -585,5 +611,42 @@ class VultureCircle extends StatelessWidget {
         height: size,
       );
     });
+  }
+}
+
+class VerticalTravelDots extends StatelessWidget {
+  const VerticalTravelDots({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AnimationController>(
+      builder: (context, animation, child) {
+        if (animation.value < 1 / 6) {
+          return Container();
+        }
+        double startTop = 128.0 + 400 + 32 + 16 + 32 + 4;
+        double endTop = 128.0 + 32 + 16 + 2;
+
+        double top =
+            endTop + (1 - 1.2 * (animation.value - 1 / 6)) * (400 + 32 - 4);
+
+        double bottom = MediaQuery.of(context).size.height - startTop - 23;
+        return Positioned(
+          top: top,
+          bottom: bottom,
+          child: Center(
+            child: Stack(
+              children: [
+                Container(
+                  width: 2,
+                  height: double.infinity,
+                  color: Colors.white,
+                )
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
