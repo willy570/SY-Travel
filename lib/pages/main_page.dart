@@ -625,7 +625,7 @@ class VerticalTravelDots extends StatelessWidget {
           return Container();
         }
         double startTop = 128.0 + 400 + 32 + 16 + 32 + 4;
-        double endTop = 128.0 + 32 + 16 + 2;
+        double endTop = 128.0 + 32 + 16 + 8;
 
         double top =
             endTop + (1 - 1.2 * (animation.value - 1 / 6)) * (400 + 32 - 4);
@@ -636,12 +636,69 @@ class VerticalTravelDots extends StatelessWidget {
           bottom: bottom,
           child: Center(
             child: Stack(
+              alignment: Alignment.bottomCenter,
               children: [
                 Container(
                   width: 2,
                   height: double.infinity,
                   color: Colors.white,
-                )
+                ),
+                Align(
+                  alignment: const Alignment(0, -1),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: white,
+                      shape: BoxShape.circle,
+                    ),
+                    height: 8,
+                    width: 8,
+                  ),
+                ),
+                Align(
+                  alignment: const Alignment(0, -0.33),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: mainBlack,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2.5,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    height: 8,
+                    width: 8,
+                  ),
+                ),
+                Align(
+                  alignment: const Alignment(0, 0.33),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: mainBlack,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2.5,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    height: 8,
+                    width: 8,
+                  ),
+                ),
+                Align(
+                  alignment: const Alignment(0, 1),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: mainBlack,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2.5,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    height: 8,
+                    width: 8,
+                  ),
+                ),
               ],
             ),
           ),
